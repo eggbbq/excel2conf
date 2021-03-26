@@ -16,6 +16,8 @@ TYPE_LIST = 'list'
 TYPE_DICT = 'dict'
 TYPE_OBJECT = 'object'
 
+OFFSET = 1
+
 
 def pytype(text):
     """convert string to python type.
@@ -198,7 +200,7 @@ class ExcelInfo(object):
         self.start = 2
 
 
-def parse_excel_list(sh, info):
+def parse_excel_list(sh, info, start):
     """Sheet name is list.
 
     | id   | name | age   |
@@ -208,7 +210,7 @@ def parse_excel_list(sh, info):
     """
     fields = []
     info.fields = fields
-    startrow = 2
+    startrow = 2 + start
     for c in range(0, sh.ncols):
         fvalue = sh.cell(0, c).value
         if not fvalue:
@@ -231,7 +233,7 @@ def parse_excel_list(sh, info):
             if not mstring.startswith('*'):
                 mstring = ''
             else:
-                startrow = 3
+                startrow = 3 + start
         field = FieldInfo(fieldname, fieldtype, c, mstring)
         fields.append(field)
 
@@ -260,7 +262,7 @@ def parse_excel_list(sh, info):
     return info
 
 
-def parse_excel_dict(sh, info):
+def parse_excel_dict(sh, info, start):
     """Sheet name is dict.
 
     | id   | name | age   |
@@ -268,7 +270,7 @@ def parse_excel_dict(sh, info):
     | int  | str  | int   |
     | 1    | abc  | 20    |
     """
-    parse_excel_list(sh, info)
+    parse_excel_list(sh, info, start)
     if info.data:
         dic = {}
         key_name = info.fields[0].name
@@ -279,7 +281,7 @@ def parse_excel_dict(sh, info):
     return info
 
 
-def parse_excel_table(sh, info):
+def parse_excel_table(sh, info, start):
     """Sheet name is table.
 
     | int | v1  | v2  |
@@ -307,7 +309,7 @@ def parse_excel_table(sh, info):
     return info
 
 
-def parse_excel_object(sh, info):
+def parse_excel_object(sh, info, start):
     """ Sheet name is 'object'.
 
     | name | type | value |
@@ -321,12 +323,12 @@ def parse_excel_object(sh, info):
     info.fields = fields
     info.data = obj
 
-    for r in range(0, sh.nrows):
+    for r in range(start, sh.nrows):
         if str(sh.cell(r, 2).value).startswith('*'):
             valcol = 3
             break
 
-    for r in range(0, sh.nrows):
+    for r in range(start, sh.nrows):
         fieldname = str(sh.cell(r, 0).value)
         fieldtype = str(sh.cell(r, 1).value)
         fieldvalue = sh.cell(r, valcol).value
@@ -359,13 +361,14 @@ def get_export_type(sh):
     return TYPE_LIST
 
 
-def parse_excels(src, match, excludes):
+def parse_excels(src, match, excludes, start=0):
     """Parse all excels in the src folder.
 
     Args:
         src:excel folder
         match:filter partten
         excludes:ignore excel files
+        start:row/col start index of data sheet
 
     Returns:
         (dic, msg)
@@ -389,13 +392,13 @@ def parse_excels(src, match, excludes):
         info.type = get_export_type(sh)
 
         if info.type == TYPE_DICT:
-            parse_excel_dict(sh, info)
+            parse_excel_dict(sh, info, start)
         if info.type == TYPE_LIST:
-            parse_excel_list(sh, info)
+            parse_excel_list(sh, info, start)
         if info.type == TYPE_OBJECT:
-            parse_excel_object(sh, info)
+            parse_excel_object(sh, info, start)
         if info.type == TYPE_TABLE:
-            parse_excel_table(sh, info)
+            parse_excel_table(sh, info, start)
 
         infos[name] = info
 
@@ -495,12 +498,13 @@ def main():
     args.add_argument('--excel', default='./', help='excel files directory')
     args.add_argument('--match', default='', help='+? -? ? -* *')
     args.add_argument('--file',  default='configs.json')
+    args.add_argument('--start', default=1, type=int)
     args.add_argument('--excludes', default='')
     arg = args.parse_args()
 
     excludes = arg.excludes.split(',')
 
-    dic, msg = parse_excels(arg.excel, arg.match, excludes)
+    dic, msg = parse_excels(arg.excel, arg.match, excludes, arg.start)
     with open(arg.file, mode='w', encoding='utf-8') as f:
         text = json.dumps(dic, ensure_ascii=False)
         f.write(text)
