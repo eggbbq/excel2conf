@@ -13,7 +13,7 @@ TYPE_DOUBBLE = 'doubble'
 TYPE_BOOL = 'bool'
 TYPE_STRING = 'string'
 
-TYPE_TABLE = 'table'
+TYPE_MATRIX = 'mat'
 TYPE_LIST = 'list'
 TYPE_DICT = 'dict'
 TYPE_OBJECT = 'object'
@@ -284,31 +284,40 @@ def parse_excel_list(sh, info, start):
 #     return info
 
 
-def parse_excel_table(sh, info, start):
-    """Sheet name is table.
+def parse_excel_mat(sh, info, start):
+    """Sheet name is table. COO
 
-    | int | v1  | v2  |
+    | int |     |     |
     | --- | --- | --- |
-    | id  | 11  | 12  |    
-    | nam | 21  | 22  |
+    |     | 11  | 12  |    
+    |     | 21  | 22  |
     """
     cell0 = str(sh.cell(0, 0).value)
     pyt = pytype(cell0)
-    head = []
-    array = []
     info.fields = [FieldInfo('', cell0, -1, '')]
-    info.data = {
-        'head': head,
-        'array': array
-    }
-    for c in range(1, sh.ncols):
-        val = sh.cell(0, c).value
-        head.append(val)
+    mat = []
+    info.data = mat
+    row_count = 0
+    mat.append(0)
     for r in range(1, sh.nrows):
+        col_count = 0
+        col_items = []
         for c in range(1, sh.ncols):
             val = sh.cell(r, c).value
             val = convert(val, pyt)
-            array.append(val)
+            if not val == 0:
+                col_count = col_count + 1
+                col_items.append(c)
+                col_items.append(val)
+        if col_count > 0:
+            row_count = row_count + 1
+            mat.append(col_count)
+            for x in col_items:
+                mat.append(x)
+    
+    mat[0] = row_count
+
+
     return info
 
 
@@ -359,8 +368,8 @@ def get_export_type(sh):
     sheet_name = sh.name.lower()
     if sheet_name == TYPE_OBJECT:
         return TYPE_OBJECT
-    elif sheet_name == TYPE_TABLE:
-        return TYPE_TABLE
+    elif sheet_name == TYPE_MATRIX:
+        return TYPE_MATRIX
     return TYPE_LIST
 
 
@@ -400,8 +409,8 @@ def parse_excels(src, match, excludes, start=0):
             parse_excel_list(sh, info, start)
         if info.type == TYPE_OBJECT:
             parse_excel_object(sh, info, start)
-        if info.type == TYPE_TABLE:
-            parse_excel_table(sh, info, start)
+        if info.type == TYPE_MATRIX:
+            parse_excel_mat(sh, info, start)
 
         infos[name] = info
     
