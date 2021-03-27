@@ -265,23 +265,23 @@ def parse_excel_list(sh, info, start):
     return info
 
 
-def parse_excel_dict(sh, info, start):
-    """Sheet name is dict.
+# def parse_excel_dict(sh, info, start):
+#     """Sheet name is dict.
 
-    | id   | name | age   |
-    | ---- | ---- | ----- |
-    | int  | str  | int   |
-    | 1    | abc  | 20    |
-    """
-    parse_excel_list(sh, info, start)
-    if info.data:
-        dic = {}
-        key_name = info.fields[0].name
-        for x in info.data:
-            key = x[key_name]
-            dic[key] = x
-        info.data = dic
-    return info
+#     | id   | name | age   |
+#     | ---- | ---- | ----- |
+#     | int  | str  | int   |
+#     | 1    | abc  | 20    |
+#     """
+#     parse_excel_list(sh, info, start)
+#     if info.data:
+#         dic = {}
+#         key_name = info.fields[0].name
+#         for x in info.data:
+#             key = x[key_name]
+#             dic[key] = x
+#         info.data = dic
+#     return info
 
 
 def parse_excel_table(sh, info, start):
@@ -395,7 +395,7 @@ def parse_excels(src, match, excludes, start=0):
         info.type = get_export_type(sh)
 
         if info.type == TYPE_DICT:
-            parse_excel_dict(sh, info, start)
+            parse_excel_list(sh, info, start)
         if info.type == TYPE_LIST:
             parse_excel_list(sh, info, start)
         if info.type == TYPE_OBJECT:
@@ -404,10 +404,10 @@ def parse_excels(src, match, excludes, start=0):
             parse_excel_table(sh, info, start)
 
         infos[name] = info
-
+    
+    # process foreign key
     for info in infos.values():
         if info.type == TYPE_LIST or info.type == TYPE_DICT:
-            # process query
             query_fields = [t for t in info.fields if t.forein_key]
             for qf in query_fields:
                 attrs = qf.forein_key.keys
@@ -473,25 +473,53 @@ def parse_excels(src, match, excludes, start=0):
                     for k in list(x.keys()):
                         if not k in allow_attrs:
                             del x[k]
+    
+    # merge a a+b
+    for info in list(infos.values()):
+        if '+' in info.filename:
+            del infos[info.name]
+            arr = os.path.splitext(info.filename)[0].split('+')
+            main_sheet = infos[arr[0]]
+            if main_sheet:
+                pk = main_sheet.fields[0].name
+                if main_sheet.type == TYPE_LIST or main_sheet.type == TYPE_DICT and pk == info.fields[0].name:
+                    for sub in info.data:
+                        if not pk in sub:
+                            continue
+                        pk_value = sub[pk]
+                        for main in main_sheet.data:
+                            if pk_value == main[pk]:
+                                for k in sub:
+                                    main[k] = sub[k]
+                                break
+                # merge fields
+                for i in range(1, len(info.fields)):
+                    main_sheet.fields.append(info.fields[i])
 
+    # build dict
     dic = {}
+    for info in infos.values():
+        if info.type == TYPE_DICT:
+            pk = info.fields[0].name
+            data = {}
+            for item in info.data:
+                key = item[pk]
+                data[key] = item
+        else:
+            data = info.data
+        dic[info.name] = data
+    
+    # build message
     message = {}
     for info in infos.values():
-        msg = {}
+        fields = []
         for t in info.fields:
+            fields.append(t.name)
             if t.forein_key:
-                msg[t.name] = t.type.split('|')[0]
+                fields.append(t.type.split('|')[0])
             else:
-                msg[t.name] = t.type
-        message[info.name] = {"type": info.type, "fields": msg}
-        if info.type == TYPE_DICT:
-            key_name = info.fields[0].name
-            data = {}
-            for t in info.data:
-                key = t[key_name]
-                data[key] = t
-            info.data = data
-        dic[info.name] = info.data
+                fields.append(t.type)
+        message[info.name] = {"type": info.type, "fields": fields}
 
     return (dic, message)
 
@@ -501,7 +529,7 @@ def main():
     args.add_argument('--excel', default='./', help='excel files directory')
     args.add_argument('--match', default='', help='+? -? ? -* *')
     args.add_argument('--file',  default='configs.json')
-    args.add_argument('--start', default=1, type=int)
+    args.add_argument('--start', default=0, type=int)
     args.add_argument('--excludes', default='')
     arg = args.parse_args()
 
