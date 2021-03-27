@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import re
 import json
@@ -15,8 +17,6 @@ TYPE_TABLE = 'table'
 TYPE_LIST = 'list'
 TYPE_DICT = 'dict'
 TYPE_OBJECT = 'object'
-
-OFFSET = 1
 
 
 def pytype(text):
@@ -509,40 +509,44 @@ def parse_excels(src, match, excludes, start=0):
             data = info.data
         dic[info.name] = data
     
-    # build message
-    message = {}
+    # build meta
+    meta = {}
     for info in infos.values():
-        fields = []
+        fields = {}
         for t in info.fields:
-            fields.append(t.name)
             if t.forein_key:
-                fields.append(t.type.split('|')[0])
+                fields[t.name] = t.type.split('|')[0]
             else:
-                fields.append(t.type)
-        message[info.name] = {"type": info.type, "fields": fields}
+                fields[t.name] = t.type
+        if info.type == TYPE_DICT:
+            pk = info.fields[0].name
+        meta[info.name] = {"type": info.type, "primary_key":pk, "fields": fields}
 
-    return (dic, message)
+    return (dic, meta)
 
 
 def main():
     args = argparse.ArgumentParser()
-    args.add_argument('--excel', default='./', help='excel files directory')
-    args.add_argument('--match', default='', help='+? -? ? -* *')
-    args.add_argument('--file',  default='configs.json')
-    args.add_argument('--start', default=0, type=int)
+    args.add_argument('--excel', default='./', help='EXCEL目录')
+    args.add_argument('--match', default='', help='+? -? ? -* *  字段匹配符')
+    args.add_argument('--file',  default='configs.json', help='JSON导出文件')
+    args.add_argument('--meta',  default='', help='解析表格时的类型信息')
+    args.add_argument('--start', default=0, type=int, help='解析表格起始行/列索引位置')
     args.add_argument('--excludes', default='')
     arg = args.parse_args()
 
     excludes = arg.excludes.split(',')
 
     dic, msg = parse_excels(arg.excel, arg.match, excludes, arg.start)
-    with open(arg.file, mode='w', encoding='utf-8') as f:
-        text = json.dumps(dic, ensure_ascii=False)
-        f.write(text)
+    if arg.file:
+        with open(arg.file, mode='w', encoding='utf-8') as f:
+            text = json.dumps(dic, ensure_ascii=False)
+            f.write(text)
 
-    with open(os.path.join(arg.excel, '__message__.json'), mode='w') as f:
-        text = json.dumps(msg, ensure_ascii=False)
-        f.write(text)
+    if arg.meta:
+        with open(os.path.join(arg.meta), mode='w') as f:
+            text = json.dumps(msg, ensure_ascii=False, indent=True)
+            f.write(text)
 
 
 if __name__ == '__main__':
