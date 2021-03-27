@@ -169,25 +169,28 @@ class FieldInfo(object):
         self.index = index
         self.match = match
 
-        self.is_query_expr = '|' in filed_type
-        self.query_fields = None
-        self.query_table = None
-        self.query_result_type = None
+        if ForeignKey.is_forein_key(filed_type):
+            self.forein_key = ForeignKey(filed_type)
+        else:
+            self.forein_key = None
 
-        if self.is_query_expr:
-            arr = filed_type.split('|')
-            if arr[0].endswith('[]'):
-                self.query_table = arr[0][:-2]
-                self.query_result_type = TYPE_LIST
-                self.query_fields = arr[1].split(',')
-            elif arr[0].endswith(r'{}'):
-                self.query_table = arr[0][:-2]
-                self.query_result_type = TYPE_DICT
-                self.query_fields = arr[1].split(',')
-            else:
-                self.query_table = arr[0]
-                self.query_result_type = TYPE_OBJECT
-                self.query_fields = arr[1].split(',')
+class ForeignKey(object):
+    @staticmethod
+    def is_forein_key(expr):
+        return '|' in expr
+
+    def __init__(self, expr):
+        arr = expr.split('|')
+        if arr[0].endswith('[]'):
+            self.result_type = TYPE_LIST
+            self.sheet_name = arr[0][:-2]
+        elif arr[0].endswith(r'{}'):
+            self.result_type = TYPE_DICT
+            self.sheet_name = arr[0][:-2]
+        else:
+            self.result_type = TYPE_OBJECT
+            self.sheet_name = arr[0]
+        self.keys = arr[1].split(',')
 
 
 class ExcelInfo(object):
@@ -405,12 +408,12 @@ def parse_excels(src, match, excludes, start=0):
     for info in infos.values():
         if info.type == TYPE_LIST or info.type == TYPE_DICT:
             # process query
-            query_fields = [t for t in info.fields if t.is_query_expr]
+            query_fields = [t for t in info.fields if t.forein_key]
             for qf in query_fields:
-                attrs = qf.query_fields
-                table = qf.query_table
+                attrs = qf.forein_key.keys
+                table = qf.forein_key.sheet_name
                 field_name = qf.name
-                query_result_type = qf.query_result_type
+                query_result_type = qf.forein_key.result_type
                 target = infos[table]
 
                 if not (target and target.data and (target.type == TYPE_LIST or target.type == TYPE_DICT)):
@@ -476,11 +479,11 @@ def parse_excels(src, match, excludes, start=0):
     for info in infos.values():
         msg = {}
         for t in info.fields:
-            if t.is_query_expr:
+            if t.forein_key:
                 msg[t.name] = t.type.split('|')[0]
             else:
                 msg[t.name] = t.type
-        message[info.name] = {"type": info.type, "message": msg}
+        message[info.name] = {"type": info.type, "fields": msg}
         if info.type == TYPE_DICT:
             key_name = info.fields[0].name
             data = {}

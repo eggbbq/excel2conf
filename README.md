@@ -97,19 +97,19 @@ sheet_name
 表格sheet名称就是导出数据类型。默认list
 
 # 5)字段类型定义
-基础数据类型
-int
-float
-doubble
-bool
-string
+## 基础数据类型
+- int
+- float
+- doubble
+- bool
+- string
 
-基础数据列表解析类型
+## 基础数据列表解析类型
 T[]S  (T:基础数据类型,S:分割字符)
 
-查询表达式类型
-查询一个 Table|field1,... (Table:数据表格名,filed:字段名)
-查询所有 Table[]|field1,...
+## 外键查询表达式类型
+- 查询一个 Table|field1,... (Table:数据表格名,filed:字段名)
+- 查询所有 Table[]|field1,...
 
 # 6)excel表格命名连接词
 连接词在导出文件时会被忽略
