@@ -48,12 +48,12 @@ dict/list 区分仅仅是在存储/访问对象上提供一点点方便，解析
 
 start 起始索引位置。表头定义一些人类可读的显示名称也是很常见的操作，如下
 
-| ID  | 等级 | 经验 | 名称   | 数组解析式  | 一对一查询            | 一对多查询             |
-| --- | --- | --- | ------ | ---------- | ------------------- | --------------------- |
-| id  | lvl | exp | name   | parse_list | query_one           | query_many            |
-| int | int | int | string | int[],     | sheet_name|id,name  | sheet_name[]|name,age |
-| 1   | 100 | 100 | lucy   | 1,2,3      | 100,aaa             | aaa, 100              |
-| 2   | 101 | 200 | mark   | 4,5,6      | 200,bbb             | bbb, 100              |
+| ID  | 等级 | 经验 | 名称   | 数组解析式  | 一对一查询            | 一对多查询                |
+| --- | --- | --- | ------ | ---------- | ------------------- | ------------------------ |
+| id  | lvl | exp | name   | parse_list | query_one           | query_many               |
+| int | int | int | string | int[],     | sheet_name\|id,name | sheet_name\[\]\|name,age |
+| 1   | 100 | 100 | lucy   | 1,2,3      | 100,aaa             | aaa, 100                 |
+| 2   | 101 | 200 | mark   | 4,5,6      | 200,bbb             | bbb, 100                 |
 
 
 ## 2)稀疏矩阵
