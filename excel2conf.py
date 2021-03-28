@@ -13,7 +13,7 @@ TYPE_DOUBBLE = 'doubble'
 TYPE_BOOL = 'bool'
 TYPE_STRING = 'string'
 
-TYPE_MATRIX = 'mat'
+TYPE_MATRIX = 'matrix'
 TYPE_LIST = 'list'
 TYPE_DICT = 'dict'
 TYPE_OBJECT = 'object'
@@ -78,9 +78,15 @@ def convert(o, t):
     if ot == t:
         return o
     if t == int:
-        return int(float(o))
+        try:
+            return int(float(o))
+        except:
+            return 0
     if t == float:
-        f = float(o)
+        try:
+            f = float(o)
+        except:
+            f = 0
         int_f = int(f)
         return int_f if int_f == f else f
     if t == bool:
@@ -285,38 +291,68 @@ def parse_excel_list(sh, info, start):
 
 
 def parse_excel_mat(sh, info, start):
-    """Sheet name is table. COO
+    """Sheet name is matrix. CSR
 
     | int |     |     |
     | --- | --- | --- |
     |     | 11  | 12  |    
     |     | 21  | 22  |
     """
-    cell0 = str(sh.cell(0, 0).value)
-    pyt = pytype(cell0)
-    info.fields = [FieldInfo('', cell0, -1, '')]
-    mat = []
-    info.data = mat
-    row_count = 0
-    mat.append(0)
-    for r in range(1, sh.nrows):
-        col_count = 0
-        col_items = []
-        for c in range(1, sh.ncols):
-            val = sh.cell(r, c).value
-            val = convert(val, pyt)
-            if not val == 0:
-                col_count = col_count + 1
-                col_items.append(c)
-                col_items.append(val)
-        if col_count > 0:
-            row_count = row_count + 1
-            mat.append(col_count)
-            for x in col_items:
-                mat.append(x)
-    
-    mat[0] = row_count
 
+    start_value_value = str(sh.cell(start, start).value)
+    pyt = pytype(start_value_value)
+    field_type = start_value_value+'[]'
+    info.fields = [
+        FieldInfo('type', sh.name, 0, ''),
+        FieldInfo('row_head', field_type, 0, ''),
+        FieldInfo('col_head', field_type, 1, ''),
+        FieldInfo('matrix', field_type, 2, '')
+    ]
+    mat = []
+
+    if sh.lower() == 'matrix(csr)':
+        row_count = 0
+        mat.append(0)
+
+        # 读取非0行
+        col_items = []
+        p = 1
+        for r in range(start+1, sh.nrows):
+            col_count = 0        
+            for c in range(start+1, sh.ncols):
+                val = sh.cell(r, c).value
+                val = convert(val, pyt)
+                if not val == 0:
+                    col_count = col_count + 1
+                    col_items.append(c - start - 1)
+                    col_items.append(val)
+            if col_count > 0:
+                row_count = row_count + 1
+                mat.append(r - start - 1)
+                mat.append(p)
+                p = p + col_count*2
+        
+        for i in range(0,row_count):
+            index = i*2+1+1
+            mat[index] = mat[index] + row_count*2
+        
+        mat[0] = row_count
+        for x in col_items:
+            mat.append(x)
+        
+        mat[0] = row_count
+    else:
+        for r in range(start+1, sh.nrows):
+            col_count = 0        
+            for c in range(start+1, sh.ncols):
+                val = sh.cell(r, c).value
+                val = convert(val, pyt)
+                mat.append(val)
+
+    col_head = [convert(sh.cell(start, i).value, pyt) for i in range(start + 1, sh.ncols)]
+    row_head = [convert(sh.cell(i, start).value, pyt) for i in range(start + 1, sh.nrows)]
+
+    info.data = {"matrix":mat,"col_head":col_head, "row_head":row_head}
 
     return info
 
@@ -356,19 +392,19 @@ def parse_excel_object(sh, info, start):
 
 
 def get_export_type(sh):
-    """Read excel sheet name as the export type(list/dict/object/table).
-    if the excel sheet name is not any of (list/dict/object/table), use list instead.
+    """Read excel sheet name as the export type(list/dict/object/matrix).
+    if the excel sheet name is not any of (list/dict/object/matrix), use list instead.
 
     Args:
         sh:xlrd.sheet
 
     Returns:
-        list/dict/object/table
+        list/dict/object/matrix
     """
     sheet_name = sh.name.lower()
     if sheet_name == TYPE_OBJECT:
         return TYPE_OBJECT
-    elif sheet_name == TYPE_MATRIX:
+    elif sheet_name.startswith(TYPE_MATRIX):
         return TYPE_MATRIX
     return TYPE_LIST
 
@@ -529,6 +565,8 @@ def parse_excels(src, match, excludes, start=0):
                 fields[t.name] = t.type
         if info.type == TYPE_DICT:
             pk = info.fields[0].name
+        else:
+            pk = ''
         meta[info.name] = {"type": info.type, "primary_key":pk, "fields": fields}
 
     return (dic, meta)
@@ -539,7 +577,7 @@ def main():
     args.add_argument('--excel', default='./', help='EXCEL目录')
     args.add_argument('--match', default='', help='+? -? ? -* *  字段匹配符')
     args.add_argument('--file',  default='configs.json', help='JSON导出文件')
-    args.add_argument('--meta',  default='', help='解析表格时的类型信息')
+    args.add_argument('--meta',  default='meta.txt', help='解析表格时的类型信息')
     args.add_argument('--start', default=0, type=int, help='解析表格起始行/列索引位置')
     args.add_argument('--excludes', default='')
     arg = args.parse_args()
