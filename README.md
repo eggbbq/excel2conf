@@ -29,11 +29,12 @@ JSON
 
 ## 1)列表(list/dict)
 
-| id  | lvl | exp | name   | parse_list | query_one           | query_many            |
-| --- | --- | --- | ------ | ---------- | ------------------- | --------------------- |
-| int | int | int | string | int[],     | sheet_name|id,name  | sheet_name[]|name,age |
-| 1   | 100 | 100 | lucy   | 1,2,3      | 100,aaa             | aaa, 100              |
-| 2   | 101 | 200 | mark   | 4,5,6      | 200,bbb             | bbb, 100              |
+| id  | lvl | exp | name   | parse_list | query_one           | query_many               |
+| --- | --- | --- | ------ | ---------- | ------------------- | ------------------------ |
+| id  | lvl | exp | name   | parse_list | query_one           | query_many               |
+| int | int | int | string | int[],     | sheet_name\|id,name | sheet_name\[\]\|name,age |
+| 1   | 100 | 100 | lucy   | 1,2,3      | 100,aaa             | aaa, 100                 |
+| 2   | 101 | 200 | mark   | 4,5,6      | 200,bbb             | bbb, 100                 |
 
 
 row(0+start)    定义字段
