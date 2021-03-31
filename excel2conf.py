@@ -310,7 +310,7 @@ def parse_excel_mat(sh, info, start):
     ]
     mat = []
 
-    if sh.lower() == 'matrix(csr)':
+    if sh.name.lower() == 'matrix(csr)':
         row_count = 0
         mat.append(0)
 
@@ -540,7 +540,49 @@ def parse_excels(src, match, excludes, start=0):
                 # merge fields
                 for i in range(1, len(info.fields)):
                     main_sheet.fields.append(info.fields[i])
+    
+    # merge array fields expr
+    """
+    {
+        ids_0:1,
+        ids_1:2,
+        ids_3:3,
+        ...
+    }
 
+    =>
+    {
+        ids:[1,2,3,...]
+    }
+    """
+    for info in infos.values():
+        dic = {}
+        for f in info.fields:
+            i = f.name.rfind('_')            
+            if i > 0 and f.name[i+1:].isnumeric():
+                field_name = f.name[:i]                
+                if not field_name in dic:
+                    dic[field_name] = f.type
+
+                elif not dic[field_name] == f.type:
+                    del dic[field_name]
+                    break
+        for k in dic:
+            t = dic[k]
+            for i in range(len(info.fields) - 1, -1, -1):
+                f = info.fields[i]                
+                if f.name.startswith(k):
+                    del info.fields[i]
+
+            info.fields.append(FieldInfo(k,t+"[]",-1,""))
+
+            lst = []
+            for item in info.data:
+                for f in list(item.keys()):
+                    if f.startswith(k):
+                        lst.append(item[f])
+                        del item[f]
+                item[k] = lst
     # build dict
     dic = {}
     for info in infos.values():
