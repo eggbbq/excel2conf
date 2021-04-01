@@ -620,7 +620,7 @@ def main():
     args.add_argument('--match', default='', help='+? -? ? -* *  字段匹配符')
     args.add_argument('--file',  default='configs.json', help='JSON导出文件')
     args.add_argument('--meta',  default='meta.txt', help='解析表格时的类型信息')
-    args.add_argument('--start', default=0, type=int, help='解析表格起始行/列索引位置')
+    args.add_argument('--start', default=1, type=int, help='解析表格起始行/列索引位置')
     args.add_argument('--excludes', default='')
     arg = args.parse_args()
 
