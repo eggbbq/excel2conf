@@ -158,9 +158,9 @@ json string
 | string              | 基础类型                   |                     |
 | T[]S                | T:基础类型 S:分隔符         | 解析成数组（不再推荐） |
 |                     |                           | 建议使用数组字段合并   |
-| Table|field1,...    | Table:查询表 field:查询字段 | 匹配一个             |
-| Table[]|field1,...  | Table:查询表 field:查询字段 | 匹配多个,存数组       |
-| Table{}|field1,...  | Table:查询表 field:查询字段 | 匹配多个,存字典       |
+| Table\|field1,...   | Table:查询表 field:查询字段 | 匹配一个             |
+| Table[]\|field1,... | Table:查询表 field:查询字段 | 匹配多个,存数组       |
+| Table{}\|field1,... | Table:查询表 field:查询字段 | 匹配多个,存字典       |
 
 # 数组字段合并
 - 字段以  下划线"_"和数字结尾
