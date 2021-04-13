@@ -577,12 +577,21 @@ def parse_excels(src, match, excludes, start=0):
             info.fields.append(FieldInfo(k,t+"[]",-1,""))
 
             lst = []
-            for item in info.data:
-                for f in list(item.keys()):
+            info.data            
+            if info.type == TYPE_LIST or info.type == TYPE_LIST:
+                for item in info.data:
+                    for f in list(item.keys()):
+                        if f.startswith(k):
+                            lst.append(item[f])
+                            del item[f]
+                    item[k] = lst
+            elif info.type == TYPE_OBJECT:
+                obj = info.data
+                for f in obj:
                     if f.startswith(k):
-                        lst.append(item[f])
-                        del item[f]
-                item[k] = lst
+                        lst.append(obj[f])
+                        del obj[f]
+                obj[k] = lst
     # build dict
     dic = {}
     for info in infos.values():
