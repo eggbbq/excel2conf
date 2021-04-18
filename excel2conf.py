@@ -592,6 +592,16 @@ def parse_excels(src, match, excludes, start=0):
                         lst.append(obj[f])
                         del obj[f]
                 obj[k] = lst
+    # build array
+    for info in infos.values():
+        if info.type == TYPE_LIST and len(info.fields) == 1  and info.fields[0].name == "_":
+            items = info.data
+            key = info.fields[0].name
+            array = []
+            for item in items:
+                array.append(item[key])
+            info.data = array
+
     # build dict
     dic = {}
     for info in infos.values():

@@ -47,6 +47,32 @@
 
 这是使用频率最高的配置表格形式
 
+## list<int>
+
+list_int.xlsx
+
+| ID  |
+| --- |
+| _   |
+| int |
+| 1   |
+| 2   |
+
+```JSON
+{
+  "list_int":[1,2]
+}
+```
+
+Bundle.xlsx
+
+| ID  |          | count | weight | probability | item id | item num |
+| --- | -------- | ----- | ------ | ----------- | ------- | -------- |
+| id  | openType | count | weight | probability | item_id | item_num |
+| int | int      | int   | int    | int         | int     | int      |
+| 1   | 1        | 3     | 100    |             | 1001    | 100      |
+| 2   | 1        | 100   |             |
+
 **定义方式**
 - sheet_name = list 或者 dict
 - 第一行 注释
@@ -230,3 +256,133 @@ User+Body.xls
 
 ## --start 表格解析起始偏移量
 默认值为1，即0索引留给注释。如果设置0，表示所有表格都不写开始注释行/列。不建议修改此参数
+
+---
+
+# 表格定义最佳实践
+
+## 游戏常量配置表(object)
+
+GameConsts.xlsx
+
+| 注释          | field name    | field type | field value |
+| ------------- | ------------- | ---------- | ----------- |
+| 最大用户等级   | max_acc_level | int        | 100         |
+| 地牢冷却时间   | dungeon_cd    | int        | 86400       |
+
+```JSON
+{
+  "GameConsts":{
+    "max_acc_level":100,
+    "dungeon_cd":86400
+  }
+}
+```
+
+## 技能系统Buff之间关系(matrix/matrix(csr))
+
+BuffRelation.xlsx
+
+- 1 替换
+- 0 共存
+- 2 驱散
+
+|      |      |      |      |      |      |      |      |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+|      | int  | 1001 | 1002 | 1003 | 1004 | 1005 | 1006 |
+|      | 1001 | 1    | 0    | 2    | 0    | 0    | 0    |
+|      | 1002 | 0    | 0    | 2    | 0    | 0    | 0    |
+|      | 1003 | 2    | 2    | 2    | 2    | 2    | 2    |
+|      | 1004 | 0    | 0    | 0    | 0    | 0    | 0    |
+|      | 1005 | 0    | 0    | 0    | 0    | 1    | 0    |
+|      | 1006 | 0    | 0    | 0    | 0    | 0    | 1    |
+
+```JSON
+//csr 结果就不写了，有点复杂
+{
+  "BuffRelation":{
+    "row_head":[1001,1002,1003,1004,1005,1006],
+    "col_head":[1001,1002,1003,1004,1005,1006],
+    "matrix":[
+      1,0,2,0,0,0,
+      0,0,2,0,0,0,
+      2,2,2,2,2,2,
+      0,0,0,0,0,0,
+      0,0,0,0,1,0,
+      0,0,0,0,0,1,
+    ]
+  }
+}
+```
+
+# 嵌套定义 关卡物品掉落包
+
+Bundle.xlsx (主表 dict)
+
+| ID   | 解包类型  | 选中项数 | 物品列表          |
+| ---- | -------- | ------- | ---------------- |
+| id   | openType | count   | items            |
+| int  | int      | int     | BundleItem[]\|id |
+| 101  | 1        | 2       | 101              |
+| 102  | 2        | 1       | 102              |
+
+BundleItem.xlsx (附表 list)
+
+| ID   | 权重   | 概率           | 物品id   | 物品数量  |
+| ---- | ------ | ------------- | ------- | -------- |
+| id   | weight | probability   | item_id | item_num |
+| int  | int    | float         | int     | int      |
+| 101  | 100    |               | 1001    | 1000     |
+| 101  | 200    |               | 1002    | 100      |
+| 101  | 300    |               | 1003    | 10       |
+| 101  | 400    |               | 1004    | 1        |
+| 102  | 0      | 0.5           | 2001    | 1        |
+| 102  | 0      | 0.2           | 2002    | 1        |
+| 102  | 0      | 0.1           | 2003    | 1        |
+| 102  | 0      | 0.05          | 2004    | 1        |
+
+```JSON
+{
+  "Bundle":{
+    "101":{
+      "id":101, 
+      "openType":1, 
+      "count":2,
+      "items":[
+        {"id":101, "weight":100, "probability":0, "itemId":1001, "itemNum":1000},
+        {"id":101, "weight":100, "probability":0, "itemId":1002, "itemNum":100},
+        {"id":101, "weight":100, "probability":0, "itemId":1003, "itemNum":10}
+      ]
+    },
+    "102":{
+      "id":102, 
+      "openType":2, 
+      "count":1,
+      "items":[
+        {"id":102, "weight":0, "probability":0.5, "itemId":2001, "itemNum":1},
+        {"id":102, "weight":0, "probability":0.2, "itemId":2002, "itemNum":1},
+        {"id":102, "weight":0, "probability":0.1, "itemId":2003, "itemNum":1},
+        {"id":102, "weight":0, "probability":0.05, "itemId":2004, "itemNum":1}
+      ]
+    }
+  }
+}
+```
+
+# 账号升级经验表
+
+| 升级经验 |
+| ------- |
+| _       |
+| 100     |
+| 500     |
+| 1000    |
+| 20000   |
+
+```JSON
+{
+  "AccountLevelExp":[100, 500, 1000, 20000]
+}
+
+//let exp = conf['AccountLevelExp'][level-1]
+```
