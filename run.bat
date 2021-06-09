@@ -1,2 +1,2 @@
-python excel2json.py --excel=./ --file=configs.json --meta=meta.txt --start=1
+python excel2json.py --separate_type=3
 pause

@@ -1,0 +1,98 @@
+{
+ "Consts": {
+  "type": "object",
+  "filename": "Constants",
+  "name": "Consts",
+  "fields": [
+   {
+    "name": "max_acc_level",
+    "type": "int"
+   },
+   {
+    "name": "full_heart_num",
+    "type": "int"
+   },
+   {
+    "name": "dungeon_cd",
+    "type": "int"
+   },
+   {
+    "name": "param_level",
+    "type": "int[]"
+   }
+  ],
+  "primary_key": ""
+ },
+ "Matrix": {
+  "type": "matrix",
+  "filename": "Table",
+  "name": "Matrix",
+  "fields": [
+   {
+    "name": "type",
+    "type": "Matrix"
+   },
+   {
+    "name": "row_head",
+    "type": "int[]"
+   },
+   {
+    "name": "col_head",
+    "type": "int[]"
+   },
+   {
+    "name": "matrix",
+    "type": "int[]"
+   }
+  ],
+  "primary_key": ""
+ },
+ "Sheet1": {
+  "type": "list",
+  "filename": "User",
+  "name": "Sheet1",
+  "fields": [
+   {
+    "name": "id",
+    "type": "int"
+   },
+   {
+    "name": "name",
+    "type": "string"
+   },
+   {
+    "name": "gender",
+    "type": "int"
+   },
+   {
+    "name": "ids",
+    "type": "int[]"
+   },
+   {
+    "name": "item",
+    "type": "UserItem[]"
+   }
+  ],
+  "primary_key": ""
+ },
+ "UserItem": {
+  "type": "list",
+  "filename": "UserItem",
+  "name": "UserItem",
+  "fields": [
+   {
+    "name": "id",
+    "type": "int"
+   },
+   {
+    "name": "type",
+    "type": "int"
+   },
+   {
+    "name": "amount",
+    "type": "int"
+   }
+  ],
+  "primary_key": ""
+ }
+}
