@@ -676,15 +676,50 @@ def main():
     args.add_argument('--merge_to_file', default='config.json', help='It is used when iseparate_type=3 ')
     args.add_argument('--separate_type', default= 3, type=int, help="1 separate with sheet, 2 separate with file  3 all in one")
     args.add_argument('--chdir', default=None)
+    args.add_argument('--param', default=None, help='init argument file')
     arg = args.parse_args()
 
-    if arg.chdir:
-        os.chdir(arg.chdir)
-    
-    ignore_filenames = arg.ignore.split(',')
-    data, meta = parse(arg.excel_dir, arg.filter, ignore_filenames)
+    if arg.param:
+        if os.path.exists(arg.param):
+            with open(arg.param, mode='r', encoding='utf-8') as f:
+                param = json.load(f)
+                chdir = param.get('chdir', None)
+                ignore = param.get('ignore', '')
+                filter = param.get('filter', '')
+                excel_dir = param.get('excel_dir', './')            
+                export_dir = param.get('export_dir', './')
+                merge_to_file = param.get('merge_to_file', 'config.json')
+                separate_type = param.get('separate_type', 3)
+        else:
+            param = {                
+                'excel_dir':'./',
+                'export_dir':'./',
+                'merge_to_file':'config.json',
+                'separate_type':3,
+                'ignore':'',
+                'filter':'',
+            }
+            with open(arg.param, mode='w') as f:
+                json.dump(param, f, ensure_ascii=False, indent=True)
+            print('{0} is created.... first time. This time i did not read excel files'.format(arg.param))
+            return
+            
+    else:
+        chdir = arg.chdir
+        ignore = arg.ignore
+        filter = arg.filter
+        excel_dir = arg.excel_dir        
+        export_dir = arg.export_dir
+        merge_to_file = arg.merge_to_file
+        separate_type = arg.separate_type
 
-    meta_filepath = os.path.join(arg.excel_dir,'.meta.txt')
+    if chdir:
+        os.chdir(chdir)
+    
+    ignore_filenames = ignore.split(',')
+    data, meta = parse(excel_dir, filter, ignore_filenames)
+
+    meta_filepath = os.path.join(excel_dir,'.meta.txt')
     changed_items = diff_meta(meta_filepath, meta)
 
     if diff_meta(meta_filepath, meta):
@@ -696,12 +731,12 @@ def main():
         with open(meta_filepath, mode='w') as f:
             json.dump(meta, f, ensure_ascii=False, indent=True)
 
-        if arg.separate_type == 3:
+        if separate_type == 3:
             # all in one
-            json_filepath = os.path.join(arg.export_dir, arg.merge_to_file)
+            json_filepath = os.path.join(export_dir, merge_to_file)
             with open(json_filepath, mode='w') as f:
                 json.dump(data, f, ensure_ascii=False)
-        elif arg.separate_type == 2:
+        elif separate_type == 2:
             # Separate with excel file
             group = {}
             for k in meta:
@@ -718,16 +753,16 @@ def main():
                         file_pack[sheet_name] = data[sheet_name]
                 
                 if file_pack:
-                    json_filepath = os.path.join(arg.export_dir, k+'.json')
+                    json_filepath = os.path.join(export_dir, k+'.json')
                     with open(json_filepath, mode='w') as f:
                         json.dump(file_pack, f, ensure_ascii=False)
 
 
-        elif arg.separate_type == 1:
+        elif separate_type == 1:
             # Separate with sheet
             for k in data:
                 sheet_pack = data[k]
-                json_filepath = os.path.join(arg.export_dir, k+'.json')
+                json_filepath = os.path.join(export_dir, k+'.json')
                 with open(json_filepath, mode='w') as f:
                     json.dump(sheet_pack, f, ensure_ascii=False)
         else:

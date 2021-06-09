@@ -290,3 +290,4 @@ BundleItem.xls (附表 list)
 ### --merge_file JSON文件名，仅当separate_type=3有效
 ### --ignore 排除表格 多个规则用逗号连接
 ### --chdir 切换工作目录
+### --param 指定一个json文件作为参数列表
